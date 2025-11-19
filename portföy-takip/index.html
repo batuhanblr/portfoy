@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portföy Takip</title>
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        /* TEMA */
+        :root {
+            --bg-color: #f0f2f5; --card-bg: #ffffff; --primary: #2c3e50; --accent: #2980b9;
+            --success: #27ae60; --danger: #c0392b; --text: #333; --subtext: #7f8c8d;
+            --border: #dfe6e9; --input-bg: #ffffff; --warning-bg: #f1c40f; --warning-text: #7f6000;
+            --goal-track: #e0e0e0; --goal-fill: linear-gradient(90deg, #3498db, #8e44ad);
+            --shadow: 0 4px 12px rgba(0,0,0,0.08); --modal-overlay: rgba(0, 0, 0, 0.5);
+            --search-hover: #f8f9fa;
+        }
+        body.dark-mode {
+            --bg-color: #121212; --card-bg: #1e1e1e; --primary: #34495e; --accent: #3498db;
+            --success: #2ecc71; --danger: #e74c3c; --text: #e0e0e0; --subtext: #b0b3b8;
+            --border: #333333; --input-bg: #2c2c2c; --goal-track: #333; --warning-bg: #d35400; --warning-text: #fff;
+            --shadow: 0 4px 12px rgba(0,0,0,0.3); --modal-overlay: rgba(0, 0, 0, 0.8);
+            --search-hover: #2a2a2a;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text); margin: 0; padding: 20px; padding-bottom: 90px; transition: background 0.3s, color 0.3s; overflow-x: hidden;}
+        .container { max-width: 1200px; margin: 0 auto; display: none; width: 100%; }
+
+        /* DUYURU BANDI */
+        #announcementBar {
+            background-color: var(--warning-bg); color: var(--warning-text);
+            padding: 10px 15px; border-radius: 8px; margin-bottom: 15px;
+            display: none; align-items: center; justify-content: space-between;
+            font-weight: bold; font-size: 0.9rem; box-shadow: var(--shadow);
+            animation: slideDown 0.5s ease;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ADMIN KONTROLLERİ */
+        .admin-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+        .control-group { background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
+        .control-group h3 { margin: 0 0 10px 0; font-size: 1rem; color: var(--primary); }
+        .switch-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold; }
+        .toggle-switch { position: relative; width: 50px; height: 26px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--danger); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* LIVE INDICATOR */
+        .live-badge {
+            font-size: 0.65rem; color: var(--success); font-weight: bold; 
+            background: rgba(39, 174, 96, 0.15); padding: 3px 8px; border-radius: 12px;
+            display: inline-flex; align-items: center; gap: 5px; animation: pulse-green 2s infinite;
+            margin-left: 10px; vertical-align: middle; border: 1px solid rgba(39, 174, 96, 0.3);
+        }
+        .live-dot { width: 6px; height: 6px; background-color: var(--success); border-radius: 50%; }
+        @keyframes pulse-green { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* UI ELEMENTS */
+        .currency-btn { font-weight: 800; color: var(--success); border: 2px solid var(--success); border-radius: 20px; padding: 5px 12px; min-width: 55px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; background: transparent; }
+        .currency-btn:hover { background: var(--success); color: white; }
+
+        .trade-switch-container { display: flex; gap: 10px; margin-bottom: 15px; }
+        .trade-btn { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid transparent; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; opacity: 0.5; background-color: var(--input-bg); color: var(--text); border-color: var(--border); }
+        .trade-btn.buy-active { opacity: 1; background-color: var(--success); color: white; border-color: var(--success); transform: scale(1.02); box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3); }
+        .trade-btn.sell-active { opacity: 1; background-color: var(--danger); color: white; border-color: var(--danger); transform: scale(1.02); box-shadow: 0 4px 10px rgba(192, 57, 43, 0.3); }
+
+        .search-wrapper { position: relative; }
+        .search-results { position: absolute; top: 100%; left: 0; width: 100%; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; box-shadow: var(--shadow); }
+        .search-item { padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; font-size: 0.9rem; }
+        .search-item:hover { background-color: var(--search-hover); }
+        .search-item:last-child { border-bottom: none; }
+        .code-badge { font-weight: bold; color: var(--accent); }
+        .name-badge { color: var(--subtext); font-size: 0.8rem; }
+        .manual-toggle { font-size: 0.8rem; color: var(--accent); text-decoration: underline; cursor: pointer; display: block; margin-top: 5px; text-align: right; }
+
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); z-index: 5000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(3px); }
+        .custom-modal-overlay.active { opacity: 1; pointer-events: all; }
+        .custom-modal { background: var(--card-bg); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: scale(0.9); transition: transform 0.3s; text-align: center; }
+        .custom-modal-overlay.active .custom-modal { transform: scale(1); }
+        .modal-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+        .modal-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: var(--text); }
+        .modal-text { color: var(--subtext); margin-bottom: 20px; font-size: 0.95rem; line-height: 1.5; }
+        .modal-input { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid var(--border); background: var(--input-bg); color: var(--text); border-radius: 8px; font-size: 1.1rem; text-align: center; display: none; font-family: inherit; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .btn-cancel { background: var(--bg-color); color: var(--subtext); } .btn-confirm { background: var(--accent); color: white; } .btn-danger { background: var(--danger); color: white; }
+
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; color: white; padding: 20px; }
+        .login-box { background: var(--card-bg); padding: 40px 30px; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); text-align: center; width: 100%; max-width: 380px; }
+        .login-box input { width: 100%; padding: 14px; margin: 10px 0; border: 2px solid var(--border); background: var(--input-bg); color: var(--text); border-radius: 10px; font-size: 16px; text-align: center; }
+        .login-box button { width: 100%; padding: 14px; background: var(--accent); color: white; margin-top: 20px; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: var(--card-bg); padding: 15px 20px; border-radius: 12px; box-shadow: var(--shadow); }
+        h1 { font-size: 1.3rem; color: var(--text); margin: 0; font-weight: 800; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .icon-btn { background: none; border: none; font-size: 1.4rem; cursor: pointer; padding: 5px; transition: transform 0.2s; }
+        .icon-btn:hover { transform: scale(1.1); }
+        .info-btn { background: transparent; border: 1px solid var(--subtext); color: var(--text); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-right: 5px; }
+        .info-btn:hover { background: var(--text); color: var(--bg-color); border-color: var(--text); }
+        .logout-btn { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+
+        .info-content { text-align: left; max-height: 60vh; overflow-y: auto; padding-right: 10px; }
+        .info-content h3 { color: var(--accent); margin-top: 0; margin-bottom: 10px; font-size: 1.1rem; }
+        .info-content h4 { color: var(--text); margin: 15px 0 5px 0; font-size: 0.95rem; font-weight: bold; }
+        .info-content p { color: var(--subtext); font-size: 0.9rem; line-height: 1.5; margin: 0 0 10px 0; }
+
+        .goal-card { background: var(--card-bg); padding: 25px; border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 25px; position: relative; overflow: hidden; border: 1px solid var(--border); }
+        .goal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .rank-display { display: flex; align-items: center; gap: 10px; }
+        .rank-icon { font-size: 2rem; }
+        .rank-info { display: flex; flex-direction: column; }
+        .rank-title { font-weight: 800; font-size: 1.1rem; color: var(--text); background: linear-gradient(45deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .rank-subtitle { font-size: 0.8rem; color: var(--subtext); }
+        .edit-goal-btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 5px; }
+        .edit-goal-btn:hover { background: var(--accent); color: white; }
+        .btn-pulsing { animation: pulse-glow 2s infinite; background: rgba(52, 152, 219, 0.1); border-color: var(--accent); }
+        .progress-track { width: 100%; height: 20px; background-color: var(--goal-track); border-radius: 15px; overflow: hidden; margin-top: 10px; }
+        .progress-fill { height: 100%; background: var(--goal-fill); width: 0%; border-radius: 15px; transition: width 1.5s ease; }
+        .goal-numbers { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.9rem; font-weight: 600; color: var(--subtext); }
+        @keyframes pulse-glow { 0% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0.4); transform: scale(1); } 50% { box-shadow: 0 0 0 8px rgba(41, 128, 185, 0); transform: scale(1.02); } 100% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0); transform: scale(1); } }
+
+        .dashboard-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .summary-card { background: var(--card-bg); padding: 20px 15px; border-radius: 12px; text-align: center; box-shadow: var(--shadow); }
+        .summary-card h3 { font-size: 0.8rem; color: var(--subtext); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .val { font-size: 1.5rem; font-weight: 800; color: var(--text); margin-top: 8px; }
+        .val.profit { color: var(--success) !important; }
+        .val.loss { color: var(--danger) !important; }
+
+        .main-grid { display: grid; grid-template-columns: 350px 1fr; gap: 25px; align-items: start; }
+        .card { background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
+        .card-content { padding: 20px; }
+        h2 { font-size: 1.1rem; color: var(--text); margin: 0; padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background-color: rgba(0,0,0,0.02); }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: var(--text); }
+        input.app-input, select.app-input, textarea.app-input { width: 100%; padding: 12px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; font-family: inherit;}
+        button.btn-primary { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; background-color: var(--success); color: white; font-size: 1rem; cursor: pointer; margin-top: 10px; }
+        .btn-sheets { width:100%; padding:12px; border:none; border-radius:8px; font-weight:bold; background: linear-gradient(to right, #27ae60, #2ecc71); color:white; margin-bottom:15px; cursor: pointer;}
+        .btn-update { background-color: var(--accent); color: white; padding: 6px 12px; border-radius:6px; border:none; cursor: pointer; font-size: 0.9rem;}
+        .delete-btn { background-color: var(--danger); color: white; padding: 5px 10px; border-radius: 6px; border:none; cursor: pointer; font-size: 0.8rem;}
+
+        .collapsible-header { cursor: pointer; user-select: none; }
+        .hidden { display: none !important; }
+        .rotate-icon { transform: rotate(-90deg); transition: transform 0.3s; }
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 600px; }
+        th, td { padding: 14px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; color: var(--text); }
+        th { background-color: rgba(0,0,0,0.03); color: var(--subtext); font-weight: 700; font-size: 0.75rem; }
+        .profit-text { color: var(--success); font-weight: 700; }
+        .loss-text { color: var(--danger); font-weight: 700; }
+        .asset-badge { background: var(--primary); color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 500;}
+        .pagination { display: flex; justify-content: center; align-items: center; margin-top: 15px; gap: 10px; padding: 10px; }
+        .page-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .page-btn:hover:not(:disabled) { background: var(--accent); color: white; border-color: var(--accent); }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .page-info { font-size: 0.9rem; color: var(--subtext); font-weight: bold; }
+        
+        #toast { visibility: hidden; min-width: 250px; margin-left: -125px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 3000; left: 50%; bottom: 90px; font-size: 16px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 90px; opacity: 1;} } @keyframes fadeout { from {bottom: 90px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); box-shadow: 0 -5px 20px rgba(0,0,0,0.1); height: 70px; z-index: 1000; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--subtext); font-size: 0.75rem; width: 100%; height: 100%; text-decoration: none; background: none; border: none; cursor: pointer; transition: color 0.2s; }
+        .nav-item span { font-size: 1.5rem; margin-bottom: 4px; }
+        .nav-item.active { color: var(--accent); font-weight: bold; }
+        .nav-item.active span { transform: scale(1.1); transition: transform 0.2s; }
+        .admin-container { display: none; max-width: 1000px; margin: 0 auto; }
+        .admin-header { background: linear-gradient(to right, #8e44ad, #3498db); color: white; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
+        .admin-card { border-top: 4px solid var(--admin-color); }
+        .user-count { font-size: 2.5rem; color: var(--admin-color); font-weight: bold; text-align: center; }
+        .admin-btn-del { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { body { padding: 15px; padding-bottom: 90px; } .container { display: block; } .main-grid { display: block; } header { padding: 12px 15px; margin-bottom: 15px; } h1 { font-size: 1.1rem; } .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.3s; } .mobile-bottom-nav { display: flex; } table { font-size: 0.8rem; } .asset-badge { font-size: 0.7rem; } }
+        @media (min-width: 769px) { .tab-content { display: block !important; } .mobile-bottom-nav { display: none !important; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="toast">İşlem Başarılı!</div>
+
+<div id="customModalOverlay" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <span id="modalIcon" class="modal-icon">⚠️</span>
+        <div id="modalTitle" class="modal-title">Uyarı</div>
+        <div id="modalText" class="modal-text">Devam?</div>
+        <input type="text" id="modalInput" class="modal-input">
+        <div class="modal-actions">
+            <button id="modalCancelBtn" class="modal-btn btn-cancel">Vazgeç</button>
+            <button id="modalConfirmBtn" class="modal-btn btn-confirm">Onayla</button>
+        </div>
+    </div>
+</div>
+
+<div id="infoModalOverlay" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h2 style="text-align:center; margin-top:0;">📖 Nasıl Çalışır?</h2>
+        <div class="info-content">
+            <h3>🚀 Hoş Geldin!</h3>
+            <p>Bu site, kişisel yatırımlarını güvenle takip etmen için tasarlandı.</p>
+            <h4>1. İşlem Ekleme</h4>
+            <p>'Ekle' bölümünden aldığın veya sattığın varlıkları kaydet. 'Alış' ve 'Satış' butonlarını kullanarak işlem türünü seçebilirsin.</p>
+            <h4>2. Fiyat Güncelleme</h4>
+            <p>Fiyatlar gecikmeli olarak güncellenir. Güncellenmeyen fiyatları kendi elinle güncelleyebilirsin. Değiştirdiğinde otomatik olarak bütün tabloya yansıyacaktır.</p>
+            <h4>3. Para Birimi</h4>
+            <p>Sağ üstteki 'TRY' butonuna basarak tüm portföyünü Dolar ($) bazında görebilirsin.</p>
+            <h4>5. İletişim</h4>
+            <p>Bir önerin veya hatan varsa, sağ üstteki '✉️' ikonuna basarak yöneticiye mesaj gönderebilirsin.</p>
+        </div>
+        <div class="modal-actions" style="margin-top:20px;">
+            <button class="modal-btn btn-confirm" onclick="document.getElementById('infoModalOverlay').classList.remove('active')">Tamam</button>
+        </div>
+    </div>
+</div>
+
+<div id="feedbackModalOverlay" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h2 style="text-align:center; margin-top:0;">✉️ İletişim</h2>
+        <p style="color:var(--subtext); font-size:0.9rem;">Önerilerini veya hataları bize bildir.</p>
+        <textarea id="feedbackInput" class="app-input" rows="4" placeholder="Mesajınız..."></textarea>
+        <div class="modal-actions">
+            <button class="modal-btn btn-cancel" onclick="document.getElementById('feedbackModalOverlay').classList.remove('active')">İptal</button>
+            <button class="modal-btn btn-confirm" onclick="window.submitFeedback()">Gönder</button>
+        </div>
+    </div>
+</div>
+
+<div id="profileModalOverlay" class="custom-modal-overlay">
+    <div class="custom-modal" style="text-align:left; width:90%; max-width:350px;">
+        <h2 style="text-align:center; margin-top:0;">👤 Profilim</h2>
+        <div style="margin-bottom:15px; padding:15px; background:rgba(0,0,0,0.03); border-radius:10px;">
+            <strong style="color:var(--subtext); font-size:0.9rem;">Kullanıcı Adı:</strong><br>
+            <span id="profileName" style="color:var(--text); font-size:1.2rem;">-</span>
+        </div>
+        <div style="margin-bottom:15px; padding:15px; background:rgba(0,0,0,0.03); border-radius:10px;">
+            <strong style="color:var(--subtext); font-size:0.9rem;">Kayıt Tarihi:</strong><br>
+            <span id="profileDate" style="color:var(--text);">Loading...</span>
+        </div>
+        <div style="margin-bottom:20px; padding:15px; background:rgba(0,0,0,0.03); border-radius:10px;">
+            <strong style="color:var(--subtext); font-size:0.9rem;">Toplam İşlem:</strong><br>
+            <span id="profileTxCount" style="color:var(--text);">0</span>
+        </div>
+        
+        <div id="passChangeSection" style="display:none; margin-bottom:15px; border-top:1px solid var(--border); padding-top:15px;">
+            <input type="password" id="newProfilePass" class="modal-input" placeholder="Yeni Şifre" style="display:block; width:100%; box-sizing:border-box;">
+            <button class="modal-btn btn-confirm" onclick="window.saveNewPassword()" style="width:100%;">Şifreyi Kaydet</button>
+        </div>
+
+        <button id="btnShowPass" class="modal-btn" onclick="window.togglePassSection()" style="width:100%; margin-bottom:10px; background:var(--accent); color:white;">🔒 Şifre Değiştir</button>
+        <button class="modal-btn btn-danger" onclick="window.requestDeleteAccount()" style="width:100%; margin-bottom:10px;">🗑️ Hesabımı Sil</button>
+        <button class="modal-btn btn-cancel" onclick="document.getElementById('profileModalOverlay').classList.remove('active'); document.getElementById('passChangeSection').style.display='none';" style="width:100%; padding:12px;">Kapat</button>
+    </div>
+</div>
+
+<div id="login-screen">
+    <div class="login-box">
+        <h2>🔐 Portföy Girişi</h2>
+        <input type="text" id="usernameInput" placeholder="Kullanıcı Adı" autocomplete="off" />
+        <input type="password" id="passwordInput" placeholder="Şifre" />
+        <button id="loginBtn" onclick="window.handleLogin()">Giriş Yap</button>
+        <div id="loginMsg" style="margin-top:10px; font-size:0.9rem; color:var(--danger); min-height:20px;"></div>
+    </div>
+    <div style="margin-top:20px; text-align:center; color:white; font-size:0.9rem; max-width:400px; line-height:1.5;">
+        <h3>👋 Hoş Geldiniz</h3>
+        <p>Burası kişisel yatırım takip sistemidir.</p>
+        <p>Kayıt olmak için kullanıcı adı ve şifre belirleyip 'Giriş Yap'a basmanız yeterlidir.</p>
+    </div>
+</div>
+
+<div class="container" id="app-container">
+    
+    <div id="announcementBar">
+        <span id="announcementText"></span>
+        <button onclick="document.getElementById('announcementBar').style.display='none'" style="background:none;border:none;color:inherit;font-weight:bold;cursor:pointer;">✕</button>
+    </div>
+
+    <header>
+        <h1>☁️ Portföyüm</h1>
+        <div class="header-actions">
+            <button class="icon-btn" onclick="document.getElementById('feedbackModalOverlay').classList.add('active')" title="Öneri/Hata Bildir">✉️</button>
+
+            <button class="currency-btn" id="currencyBtn" onclick="window.toggleCurrency()">TRY</button>
+            <button class="info-btn" onclick="document.getElementById('infoModalOverlay').classList.add('active')">Nasıl Çalışır?</button>
+            <button class="icon-btn" id="themeBtn" onclick="window.toggleTheme()">🌙</button>
+            <button class="icon-btn" onclick="window.openProfile()">👤</button>
+            <button class="logout-btn" onclick="window.requestLogout()">Çıkış</button>
+        </div>
+    </header>
+
+    <div class="goal-card">
+        <div class="goal-header">
+            <div class="rank-display">
+                <div class="rank-icon" id="rankIcon">🌱</div>
+                <div class="rank-info"><span class="rank-title" id="rankTitle">Çırak Yatırımcı</span><span class="rank-subtitle">Finansal Özgürlük</span></div>
+            </div>
+            <button id="editGoalBtn" class="edit-goal-btn btn-pulsing" onclick="window.requestEditTarget()">🎯 Hedefi Düzenle</button>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="goalProgressBar" style="width: 0%"></div></div>
+        <div class="goal-numbers"><span><span id="currentProgressText">0</span> <span class="curr-symbol">TL</span></span><span>Hedef: <span id="targetText">1.000.000</span> <span class="curr-symbol">TL</span></span></div>
+    </div>
+
+    <div class="main-grid">
+        <div class="left-panel tab-content" id="tab-add">
+            <div class="card">
+                <h2>➕ İşlem Ekle</h2>
+                <div class="card-content">
+                    <div class="trade-switch-container">
+                        <button id="btnBuy" class="trade-btn buy-active" onclick="setTradeType('buy')">🟢 Alış Yap</button>
+                        <button id="btnSell" class="trade-btn" onclick="setTradeType('sell')">🔴 Satış Yap</button>
+                    </div>
+                    <input type="hidden" id="transType" value="buy">
+
+                    <div class="form-group"><input type="date" id="buyDate" class="app-input"></div>
+                    
+                    <div class="form-group" style="position:relative;">
+                        <div id="searchModeDiv">
+                            <input type="text" id="assetSearchInput" class="app-input" placeholder="Hisse Ara (Örn: Akbank)" autocomplete="off">
+                            <div id="searchResults" class="search-results"></div>
+                            <a class="manual-toggle" onclick="toggleSearchMode()">Listede bulamadım, kendim yazmak istiyorum</a>
+                        </div>
+                        <input type="text" id="assetSymbol" class="app-input" style="display:none;" placeholder="Kod Girin (Örn: THYAO)">
+                        <a id="backToSearch" class="manual-toggle" style="display:none;" onclick="toggleSearchMode()">Listeden seçmek istiyorum</a>
+                    </div>
+
+                    <div class="form-group"><input type="number" id="quantity" class="app-input" step="0.01" placeholder="Adet"></div>
+                    <div class="form-group"><label id="priceLabel">Alış Fiyatı (₺)</label><input type="number" id="price" class="app-input" step="0.01"></div>
+                    <button id="submitBtn" class="btn-primary" onclick="window.addTransaction()">Alış Kaydet</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2>💹 Fiyatlar <div class="live-badge" title="Otomatik Güncelleniyor"><span class="live-dot"></span> CANLI</div></h2>
+                <div class="card-content">
+                    <div id="priceListContainer"></div>
+                    <p class="legal-disclaimer">⚠️ Veriler Google Finance kaynaklıdır, 15dk gecikmelidir. Yatırım tavsiyesi değildir.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="tab-content active" id="tab-home">
+                <div class="dashboard-summary">
+                    <div class="summary-card"><h3>Toplam Varlık</h3><div class="val" id="totalValue">0</div></div>
+                    <div class="summary-card"><h3>Net Kar/Zarar</h3><div class="val" id="unrealizedPnL">0</div></div>
+                    <div class="summary-card" style="border-bottom: 3px solid var(--success);"><h3>Nakit Kar (Satış)</h3><div class="val" id="realizedPnL">0</div></div>
+                </div>
+                <div class="card" style="border-left: 5px solid var(--accent);">
+                    <h2 class="collapsible-header" onclick="window.toggleSummary()"><span>📊 Varlık Özeti</span><span class="toggle-icon" id="summaryToggleIcon">▼</span></h2>
+                    <div class="card-content" id="assetSummaryContent"><div class="table-container"><table id="assetSummaryTable"></table></div></div>
+                </div>
+            </div>
+            <div class="tab-content" id="tab-history">
+                <div class="card"><h2>🕒 İşlem Geçmişi</h2><div class="card-content table-container"><table id="portfolioTable"></table></div>
+                <div class="pagination"><button id="prevPageBtn" class="page-btn" onclick="window.changePage(-1)">❮</button><span id="pageInfo" class="page-info">Sayfa 1 / 1</span><button id="nextPageBtn" class="page-btn" onclick="window.changePage(1)">❯</button></div>
+                </div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="admin-container" id="admin-container">
+    <header class="admin-header"><h1>🛡️ Yönetici Paneli</h1><button class="logout-btn" onclick="window.requestLogout()">Çıkış</button></header>
+    
+    <div class="card admin-card">
+        <div class="card-content">
+            <div class="admin-controls">
+                <div class="control-group">
+                    <h3>🚧 Bakım Modu</h3>
+                    <label class="switch-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="maintenanceSwitch">
+                            <span class="slider"></span>
+                        </div>
+                        <span>Sistemi Kitle (Sadece Admin Girebilir)</span>
+                    </label>
+                </div>
+                <div class="control-group">
+                    <h3>📢 Sistem Duyurusu</h3>
+                    <input type="text" id="announcementInput" class="app-input" placeholder="Duyuru mesajını buraya yazın..." style="margin-bottom:10px;">
+                    <button class="modal-btn btn-confirm" onclick="window.saveSystemConfig()">Ayarları Kaydet & Yayınla</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card admin-card">
+        <h2>📨 Gelen Kutusu (Mesajlar)</h2>
+        <div class="card-content table-container">
+            <table id="adminFeedbackTable">
+                <thead><tr><th>Tarih</th><th>Kullanıcı</th><th>Mesaj</th><th>İşlem</th></tr></thead>
+                <tbody id="adminFeedbackList"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="dashboard-summary"><div class="summary-card admin-card"><h3>Kullanıcı</h3><div class="user-count" id="adminTotalUsers">0</div></div><div class="summary-card admin-card"><h3>İşlem</h3><div class="user-count" id="adminTotalTrans">0</div></div></div>
+    <div class="card admin-card"><h2>👥 Kullanıcı Listesi</h2><div class="card-content table-container"><table id="adminUserTable"><thead><tr><th>Kullanıcı</th><th>Son Giriş</th><th>Şifre</th><th>İşlem</th><th>Yönet</th></tr></thead><tbody id="adminUserList"></tbody></table></div></div>
+</div>
+
+<nav class="mobile-bottom-nav">
+    <button class="nav-item active" onclick="switchTab('tab-home', this)"><span>🏠</span>Özet</button>
+    <button class="nav-item" onclick="switchTab('tab-add', this)"><span>➕</span>Ekle</button>
+    <button class="nav-item" onclick="switchTab('tab-history', this)"><span>📜</span>Geçmiş</button>
+</nav>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, deleteDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const ADMIN_USERNAME = "adminbatuhan";
+    const ADMIN_PASSWORD = "BalBilBul871054"; 
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyBzH-P25cXj3uwdVUeHci48DJvROnNWgRH3fmoxWkqgY2yI-IGFtovSt3rw28PcRzvFw/exec"; 
+    const firebaseConfig = { apiKey: "AIzaSyBBWQSCtTauCVLROzwpQOj053ZTtQgHJjk", authDomain: "portfo-4c139.firebaseapp.com", projectId: "portfo-4c139", storageBucket: "portfo-4c139.firebasestorage.app", messagingSenderId: "887822897950", appId: "1:887822897950:web:49297cf4c39c4edf96af0f", measurementId: "G-Z7JXVPQQZH" };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let currentUser = null; let docRef = null; let unsubscribe = null;
+    let portfolio = []; let marketPrices = {}; let calculatedAssets = {}; let totalRealizedPnL = 0;
+    let targetAmount = 1000000; let lastRankIndex = -1; let userCreationDate = "-";
+    let currentCurrency = 'TRY';
+    const RANKS = [{percent:0,title:"Çırak Yatırımcı",icon:"🌱"},{percent:10,title:"Tasarrufçu",icon:"🪵"},{percent:25,title:"Portföy Mimarı",icon:"🏗️"},{percent:50,title:"Yatırım Gurusu",icon:"🚀"},{percent:75,title:"Finansal Özgür",icon:"💎"},{percent:100,title:"EFSANE",icon:"👑"}];
+    let modalCallback = null;
+    let currentPage = 1; const itemsPerPage = 5;
+    let autoUpdateInterval = null;
+    let feedbackList = []; // For Admin
+
+    const ASSETS_DB = [
+        {c:"THYAO",n:"Türk Hava Yolları"},{c:"GARAN",n:"Garanti Bankası"},{c:"AKBNK",n:"Akbank"},{c:"ASELS",n:"Aselsan"},{c:"SISE",n:"Şişe Cam"},
+        {c:"EREGL",n:"Ereğli Demir Çelik"},{c:"KCHOL",n:"Koç Holding"},{c:"SAHOL",n:"Sabancı Holding"},{c:"TUPRS",n:"Tüpraş"},{c:"ENJSA",n:"Enerjisa"},
+        {c:"ALTINS1",n:"Darphane Altın"},{c:"GRAM",n:"Gram Altın"},{c:"USDTRY",n:"Dolar"},{c:"EURTRY",n:"Euro"},
+        {c:"PETKM",n:"Petkim"},{c:"BIMAS",n:"Bim Mağazalar"},{c:"FROTO",n:"Ford Otosan"},{c:"TOASO",n:"Tofaş"},
+        {c:"SASA",n:"Sasa Polyester"},{c:"HEKTS",n:"Hektaş"},{c:"EKGYO",n:"Emlak Konut"},{c:"ISCTR",n:"İş Bankası C"},
+        {c:"YKBNK",n:"Yapı Kredi"},{c:"VAKBN",n:"Vakıfbank"},{c:"HALKB",n:"Halkbank"},{c:"ODAS",n:"Odaş Elektrik"},
+        {c:"KOZAL",n:"Koza Altın"},{c:"KOZAA",n:"Koza Madencilik"},{c:"IPEKE",n:"İpek Doğal Enerji"},{c:"KRDMD",n:"Kardemir D"},
+        {c:"TTKOM",n:"Türk Telekom"},{c:"TCELL",n:"Turkcell"},{c:"ARCLK",n:"Arçelik"},{c:"VESTL",n:"Vestel"},
+        {c:"ULKER",n:"Ülker"},{c:"AEFES",n:"Anadolu Efes"},{c:"CCOLA",n:"Coca Cola İçecek"},{c:"MGROS",n:"Migros"},
+        {c:"SOKM",n:"Şok Marketler"},{c:"MAVI",n:"Mavi Giyim"},{c:"PGSUS",n:"Pegasus"},{c:"TAVHL",n:"Tav Havalimanları"},
+        {c:"DOAS",n:"Doğuş Otomotiv"},{c:"AYGAZ",n:"Aygaz"},{c:"TKFEN",n:"Tekfen Holding"},{c:"ALARK",n:"Alarko Holding"},
+        {c:"ENKAI",n:"Enka İnşaat"},{c:"GUBRF",n:"Gübre Fabrikaları"},{c:"SMRTG",n:"Smart Güneş"},{c:"KONTR",n:"Kontrolmatik"},
+        {c:"EGEEN",n:"Ege Endüstri"},{c:"OTKAR",n:"Otokar"},{c:"TTRAK",n:"Türk Traktör"},{c:"BRSAN",n:"Borusan"},
+        {c:"BRYAT",n:"Borusan Yatırım"},{c:"ISMEN",n:"İş Yatırım"},{c:"TSKB",n:"TSKB"},{c:"SKBNK",n:"Şekerbank"},
+        {c:"ALBRK",n:"Albaraka"},{c:"ZOREN",n:"Zorlu Enerji"},{c:"AKSEN",n:"Aksa Enerji"},{c:"GWIND",n:"Galata Wind"},
+        {c:"BIOEN",n:"Biotrend"},{c:"YEOTK",n:"Yeo Teknoloji"},{c:"GESAN",n:"Girişim Elektrik"},{c:"EUPWR",n:"Europower"},
+        {c:"ALFAS",n:"Alfa Solar"},{c:"ASTOR",n:"Astor Enerji"},{c:"CVKMD",n:"CVK Maden"},{c:"KCAER",n:"Kocaer Çelik"},
+        {c:"IZENR",n:"İzdemir Enerji"},{c:"TATEN",n:"Tatlıpınar Enerji"},{c:"ENERY",n:"Enerya"},{c:"AHGAZ",n:"Ahlatcı Doğalgaz"},
+        {c:"CANTE",n:"Çan2 Termik"},{c:"QUAGR",n:"Qua Granite"},{c:"CIMSA",n:"Çimsa"},{c:"AKCNS",n:"Akçansa"},
+        {c:"BUCIM",n:"Bursa Çimento"},{c:"NUHCM",n:"Nuh Çimento"},{c:"OYAKC",n:"Oyak Çimento"},{c:"BTC",n:"Bitcoin"},{c:"ETH",n:"Ethereum"}
+    ];
+
+    // SEARCH
+    const searchInput = document.getElementById('assetSearchInput');
+    const resultsBox = document.getElementById('searchResults');
+    const manualInput = document.getElementById('assetSymbol');
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toUpperCase();
+        if (query.length < 2) { resultsBox.style.display = 'none'; return; }
+        const matches = ASSETS_DB.filter(a => a.c.includes(query) || a.n.toUpperCase().includes(query));
+        if (matches.length > 0) {
+            resultsBox.innerHTML = matches.map(a => `<div class="search-item" onclick="selectAsset('${a.c}')"><span class="code-badge">${a.c}</span><span class="name-badge">${a.n}</span></div>`).join('');
+            resultsBox.style.display = 'block';
+        } else { resultsBox.style.display = 'none'; }
+    });
+
+    window.selectAsset = function(code) {
+        manualInput.value = code; searchInput.value = code; resultsBox.style.display = 'none'; autoFillPrice(code);
+    }
+    manualInput.addEventListener('change', function() { autoFillPrice(this.value.toUpperCase()); });
+    function autoFillPrice(code) { if(marketPrices[code]) { document.getElementById('price').value = marketPrices[code]; showToast(`✅ Fiyat: ${marketPrices[code]} ₺`); } }
+    
+    window.toggleSearchMode = function() {
+        const searchDiv = document.getElementById('searchModeDiv'); const backLink = document.getElementById('backToSearch');
+        if (searchDiv.style.display !== 'none') { searchDiv.style.display = 'none'; manualInput.style.display = 'block'; backLink.style.display = 'block'; manualInput.value = ''; manualInput.focus(); } 
+        else { searchDiv.style.display = 'block'; manualInput.style.display = 'none'; backLink.style.display = 'none'; searchInput.value = ''; }
+    }
+
+    // MODAL
+    function showModal(t, m, y, p=null, c){ document.getElementById('modalTitle').innerText=t; document.getElementById('modalText').innerText=m; const i=document.getElementById('modalIcon'); const b=document.getElementById('modalConfirmBtn'); const n=document.getElementById('modalInput'); n.style.display=p?'block':'none'; if(p){n.value="";n.placeholder=p;} if(y==='danger'){i.innerText='🗑️';b.className='modal-btn btn-danger';b.innerText='Evet';}else if(y==='input'){i.innerText='✏️';b.className='modal-btn btn-confirm';b.innerText='Kaydet';}else{i.innerText='⚠️';b.className='modal-btn btn-confirm';b.innerText='Onayla';} modalCallback=c; document.getElementById('customModalOverlay').classList.add('active'); if(p)n.focus(); }
+    function closeModal(){document.getElementById('customModalOverlay').classList.remove('active'); modalCallback=null;}
+    document.getElementById('modalCancelBtn').onclick=closeModal; document.getElementById('modalConfirmBtn').onclick=function(){if(modalCallback){modalCallback(document.getElementById('modalInput').value);}closeModal();}
+
+    window.requestLogout = function() { showModal("Çıkış Yap", "Oturumu kapatmak istediğine emin misin?", "danger", null, () => { localStorage.removeItem('portfoy_user'); location.reload(); }); }
+    window.requestDeleteTransaction = function(id) { showModal("İşlemi Sil", "Bu kaydı silmek istiyor musun?", "danger", null, () => { portfolio = portfolio.filter(t => t.id !== id); saveDataToCloud(); showToast("🗑️ Silindi"); }); }
+    window.requestEditTarget = function() { showModal("Hedef Belirle", "Yeni finansal hedefini gir:", "input", "Örn: 1000000", (val) => { if(val && !isNaN(val)) { targetAmount = parseFloat(val); saveDataToCloud(); renderDash(); } }); }
+    window.openProfile = function() { if (!currentUser) return; document.getElementById('profileName').innerText = currentUser; document.getElementById('profileDate').innerText = userCreationDate || "Bilinmiyor"; document.getElementById('profileTxCount').innerText = portfolio.length + " Adet"; document.getElementById('profileModalOverlay').classList.add('active'); }
+    window.requestDeleteAccount = function() { document.getElementById('profileModalOverlay').classList.remove('active'); showModal("HESABI SİL", "⚠️ BU İŞLEM GERİ ALINAMAZ! Tüm verilerin silinecek.", "danger", null, async () => { if(currentUser && docRef) { try { await deleteDoc(docRef); localStorage.removeItem('portfoy_user'); showToast("🗑️ Silindi."); setTimeout(() => location.reload(), 2000); } catch (e) { alert("Hata"); } } }); }
+    window.adminDeleteUser = async function(targetUser) { if(confirm(`⚠️ DİKKAT: ${targetUser} kullanıcısını silmek istediğine emin misin?`)) { try { await deleteDoc(doc(db, "portfoy_db", targetUser + "_secure_data")); alert("Kullanıcı silindi."); loginAdmin(); } catch(e) { alert("Hata oluştu: " + e.message); } } }
+
+    // PASSWORD CHANGE
+    window.togglePassSection = function() { const sec = document.getElementById('passChangeSection'); sec.style.display = sec.style.display === 'none' ? 'block' : 'none'; }
+    window.saveNewPassword = async function() {
+        const newPass = document.getElementById('newProfilePass').value;
+        if(!newPass || newPass.length < 3) { alert("Şifre çok kısa!"); return; }
+        try {
+            await setDoc(doc(db, "portfoy_db", currentUser + "_secure_data"), {password: newPass}, {merge: true});
+            alert("Şifre güncellendi!");
+            document.getElementById('newProfilePass').value = ""; document.getElementById('passChangeSection').style.display='none';
+        } catch(e) { alert("Hata"); }
+    }
+
+    // FEEDBACK SYSTEM
+    window.submitFeedback = async function() {
+        const msg = document.getElementById('feedbackInput').value.trim();
+        if(!msg) { alert("Lütfen mesaj yazın."); return; }
+        const payload = { user: currentUser, date: new Date().toLocaleString('tr-TR'), text: msg };
+        try {
+            // Feedbacks stored in ADMIN_CONFIG document's 'messages' array
+            const adminRef = doc(db, "portfoy_db", "ADMIN_CONFIG");
+            await updateDoc(adminRef, { messages: arrayUnion(payload) });
+            document.getElementById('feedbackModalOverlay').classList.remove('active');
+            document.getElementById('feedbackInput').value = "";
+            showToast("✅ Mesaj Gönderildi!");
+        } catch(e) { 
+            // If doc doesn't exist create it
+            try {
+                 const adminRef = doc(db, "portfoy_db", "ADMIN_CONFIG");
+                 await setDoc(adminRef, { messages: [payload] }, { merge: true });
+                 document.getElementById('feedbackModalOverlay').classList.remove('active');
+                 showToast("✅ Mesaj Gönderildi!");
+            } catch(err) { alert("Hata!"); }
+        }
+    }
+    
+    // ADMIN: DELETE FEEDBACK
+    window.deleteFeedback = async function(index) {
+        const msgToDelete = feedbackList[index];
+        if(confirm("Bu mesajı sil?")) {
+            try {
+                const adminRef = doc(db, "portfoy_db", "ADMIN_CONFIG");
+                await updateDoc(adminRef, { messages: arrayRemove(msgToDelete) });
+                loginAdmin(); // Refresh
+            } catch(e) { alert("Hata"); }
+        }
+    }
+
+    // STARTUP
+    window.addEventListener('DOMContentLoaded', () => {
+        const st = localStorage.getItem('theme'); if(st==='dark'){document.body.classList.add('dark-mode');document.getElementById('themeBtn').innerText='☀️';}
+        const sc = localStorage.getItem('currency'); if(sc) currentCurrency = sc; document.getElementById('currencyBtn').innerText = currentCurrency;
+        
+        onSnapshot(doc(db, "portfoy_db", "ADMIN_CONFIG"), (s) => {
+            if(s.exists()) {
+                const d = s.data();
+                const bar = document.getElementById('announcementBar');
+                if(d.announcement && d.announcement.trim() !== "") { document.getElementById('announcementText').innerText = d.announcement; bar.style.display = 'flex'; } else { bar.style.display = 'none'; }
+                if(d.maintenance && currentUser && currentUser !== ADMIN_USERNAME) { alert("🚧 Sistem bakıma alındı."); localStorage.removeItem('portfoy_user'); location.reload(); }
+            }
+        });
+
+        const su = localStorage.getItem('portfoy_user'); if(su){if(su===ADMIN_USERNAME)loginAdmin();else loginSuccess(su);}
+    });
+
+    window.toggleTheme=function(){document.body.classList.toggle('dark-mode'); const d=document.body.classList.contains('dark-mode'); localStorage.setItem('theme',d?'dark':'light'); document.getElementById('themeBtn').innerText=d?'☀️':'🌙';}
+    window.switchTab=function(i,e){document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));document.getElementById(i).classList.add('active');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));e.classList.add('active');}
+    window.toggleSummary=function(){document.getElementById('assetSummaryContent').classList.toggle('hidden');document.getElementById('summaryToggleIcon').classList.toggle('rotate-icon');}
+    window.changePage = function(d) { currentPage += d; renderTable(); }
+
+    window.toggleCurrency = function() {
+        currentCurrency = currentCurrency === 'TRY' ? 'USD' : 'TRY';
+        localStorage.setItem('currency', currentCurrency);
+        document.getElementById('currencyBtn').innerText = currentCurrency;
+        render(); 
+    }
+    
+    function fmtC(amount) {
+        let value = amount; let code = 'TRY';
+        if(currentCurrency === 'USD') {
+            let rate = marketPrices['USDTRY'] || 1; if (rate === 0) rate = 1;
+            value = amount / rate; code = 'USD';
+        }
+        return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: code }).format(value);
+    }
+    const fmtN=n=>new Intl.NumberFormat('tr-TR',{maximumFractionDigits:2}).format(n);
+
+    // LOGIN
+    window.handleLogin=async function(){
+        const u=document.getElementById('usernameInput').value.trim().toLowerCase(); const p=document.getElementById('passwordInput').value.trim();
+        const sysSnap = await getDoc(doc(db, "portfoy_db", "ADMIN_CONFIG"));
+        if(sysSnap.exists() && sysSnap.data().maintenance && u !== ADMIN_USERNAME) { alert("🚧 Bakım var."); return; }
+        if(u===ADMIN_USERNAME&&p===ADMIN_PASSWORD){localStorage.setItem('portfoy_user',ADMIN_USERNAME);loginAdmin();return;}
+        const cu=u.replace(/[^a-z0-9çğıöşü]/g,""); if(cu.length<3)return; document.getElementById('loginBtn').disabled=true;
+        try{ const r=doc(db,"portfoy_db",cu+"_secure_data"); const s=await getDoc(r);
+        if(s.exists()){if(s.data().password===p){localStorage.setItem('portfoy_user',cu);loginSuccess(cu);}else{alert("Hata");document.getElementById('loginBtn').disabled=false;}}
+        else{if(confirm("Yeni hesap?")){await setDoc(r,{password:p,portfolio:[],prices:{},target:1000000,createdAt:new Date().toISOString(), lastLogin: new Date().toISOString()});localStorage.setItem('portfoy_user',cu);loginSuccess(cu);}else document.getElementById('loginBtn').disabled=false;}
+        }catch(e){alert("Hata");document.getElementById('loginBtn').disabled=false;}
+    }
+    function loginSuccess(u){
+        currentUser=u; document.getElementById('login-screen').style.display='none'; document.getElementById('app-container').style.display='block';
+        const r=doc(db,"portfoy_db",u+"_secure_data"); setDoc(r, {lastLogin: new Date().toISOString()}, {merge:true});
+        startDataListener(u);
+        autoUpdateInterval = setInterval(() => window.fetchFromSheets(true), 900000); 
+        window.fetchFromSheets(true); 
+    }
+    
+    async function loginAdmin(){ 
+        document.getElementById('login-screen').style.display='none'; document.getElementById('admin-container').style.display='block'; document.querySelector('.mobile-bottom-nav').style.display='none';
+        // Config Load
+        const sys = await getDoc(doc(db, "portfoy_db", "ADMIN_CONFIG"));
+        if(sys.exists()) {
+            const d = sys.data();
+            document.getElementById('maintenanceSwitch').checked = d.maintenance || false;
+            document.getElementById('announcementInput').value = d.announcement || "";
+            
+            // LOAD FEEDBACK
+            const fbList = document.getElementById('adminFeedbackList');
+            fbList.innerHTML = '';
+            if(d.messages && d.messages.length > 0) {
+                feedbackList = d.messages;
+                d.messages.forEach((m, i) => {
+                    fbList.innerHTML += `<tr><td>${m.date}</td><td>${m.user}</td><td>${m.text}</td><td><button class="admin-btn-del" onclick="window.deleteFeedback(${i})">Sil</button></td></tr>`;
+                });
+            } else { fbList.innerHTML = '<tr><td colspan="4">Mesaj yok.</td></tr>'; }
+        }
+
+        const t=document.getElementById('adminUserList'); t.innerHTML='<tr><td colspan="5">...</td></tr>'; 
+        try{
+            const q=await getDocs(collection(db,"portfoy_db"));let h="",c=0,tt=0;
+            q.forEach(d=>{
+                if(d.id.includes('_secure')){
+                    const dt=d.data();const un=d.id.replace('_secure_data','');const tx=dt.portfolio?.length||0;c++;tt+=tx;
+                    const last=dt.lastLogin?new Date(dt.lastLogin).toLocaleString('tr-TR'):(dt.createdAt?new Date(dt.createdAt).toLocaleDateString('tr-TR'):'-');
+                    h+=`<tr><td><strong>${un}</strong></td><td>${last}</td><td>${dt.password}</td><td>${tx}</td><td><button class="admin-btn-del" onclick="window.adminDeleteUser('${un}')">Sil</button></td></tr>`;
+                }
+            });
+            t.innerHTML=h;document.getElementById('adminTotalUsers').innerText=c;document.getElementById('adminTotalTrans').innerText=tt;
+        }catch(e){t.innerHTML='<tr><td>Hata</td></tr>';} 
+    }
+    
+    window.logout=function(){if(confirm("Çıkış?")){localStorage.removeItem('portfoy_user');location.reload();}}
+    function startDataListener(u){docRef=doc(db,"portfoy_db",u+"_secure_data");if(unsubscribe)unsubscribe();unsubscribe=onSnapshot(docRef,(s)=>{if(s.exists()){const d=s.data();portfolio=d.portfolio||[];marketPrices=d.prices||{};targetAmount=d.target||1000000;userCreationDate=d.createdAt?new Date(d.createdAt).toLocaleDateString('tr-TR'):"-";calculate();render();}});}
+    async function saveDataToCloud(){if(currentUser)try{await setDoc(docRef,{portfolio,prices:marketPrices,target:targetAmount,lastUpdate:new Date().toISOString()},{merge:true});}catch(e){}}
+    function calculate(){calculatedAssets={};totalRealizedPnL=0;[...portfolio].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(t=>{if(!calculatedAssets[t.symbol])calculatedAssets[t.symbol]={qty:0,totalCost:0,avgCost:0};let a=calculatedAssets[t.symbol];if(t.type==='sell'){totalRealizedPnL+=(t.price-a.avgCost)*t.quantity;a.qty-=t.quantity;a.totalCost=a.qty*a.avgCost;}else{a.qty+=t.quantity;a.totalCost+=t.quantity*t.price;if(a.qty>0)a.avgCost=a.totalCost/a.qty;}});}
+
+    window.fetchFromSheets = async function(silent = false) { 
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL);
+            const data = await response.json();
+            let updatedCount = 0;
+            data.forEach(item => {
+                if (item.symbol && item.price) {
+                    marketPrices[item.symbol] = parseFloat(item.price);
+                    updatedCount++;
+                }
+            });
+            saveDataToCloud();
+        } catch (error) { if(!silent) showToast("⚠️ Veri bekleniyor..."); }
+    }
+
+    function showToast(m){const x=document.getElementById("toast");x.innerText=m;x.className="show";setTimeout(()=>{x.className=x.className.replace("show","");},3000);}
+    window.setTradeType = function(type) { document.getElementById('transType').value = type; const btnBuy = document.getElementById('btnBuy'); const btnSell = document.getElementById('btnSell'); const submitBtn = document.getElementById('submitBtn'); const label = document.getElementById('priceLabel'); if(type === 'buy') { btnBuy.classList.add('buy-active'); btnSell.classList.remove('sell-active'); submitBtn.innerText = "Alış Kaydet"; submitBtn.style.backgroundColor = "var(--success)"; label.innerText = "Alış Fiyatı (₺)"; } else { btnBuy.classList.remove('buy-active'); btnSell.classList.add('sell-active'); submitBtn.innerText = "Satış Kaydet"; submitBtn.style.backgroundColor = "var(--danger)"; label.innerText = "Satış Fiyatı (₺)"; } }
+    window.togglePriceLabel = function() { } 
+
+    window.addTransaction=function(){const t=document.getElementById('transType').value,d=document.getElementById('buyDate').value,s=document.getElementById('assetSymbol').value.trim(),q=parseFloat(document.getElementById('quantity').value),p=parseFloat(document.getElementById('price').value);if(!s||!q||!p)return; if(t==='sell'){const h=calculatedAssets[s]?.qty||0;if(q>h){showToast("Yetersiz bakiye");return;}} else if(!marketPrices[s])marketPrices[s]=p; portfolio.push({id:Date.now(),type:t,date:d,symbol:s,quantity:q,price:p}); saveDataToCloud(); showToast("Kaydedildi");}
+    window.updatePrice=function(s){const v=parseFloat(document.getElementById(`price-input-${s}`).value);if(!isNaN(v)){marketPrices[s]=v;saveDataToCloud();showToast("Fiyat Güncel");}}
+    document.getElementById('buyDate').valueAsDate=new Date();
+
+    function render(){renderPrices();renderSummary();renderTable();renderDash();}
+    function renderPrices(){const c=document.getElementById('priceListContainer');c.innerHTML='';const syms=Object.keys(calculatedAssets).length>0?Object.keys(calculatedAssets):[];if(syms.length===0)c.innerHTML='<small>Boş</small>';syms.forEach(s=>{c.innerHTML+=`<div style="display:flex;justify-content:space-between;margin-bottom:8px;align-items:center;"><span style="font-weight:bold;font-size:0.9rem;color:var(--text);">${s}</span><div><input type="number" id="price-input-${s}" value="${marketPrices[s]||0}" style="width:70px;padding:5px;font-size:0.9rem;" class="app-input"> <button class="btn-update" onclick="window.updatePrice('${s}')">✓</button></div></div>`;});}
+    function renderSummary(){const t=document.getElementById('assetSummaryTable');let h=`<thead><tr><th>Varlık</th><th>Adet</th><th>Ort.</th><th>Güncel</th><th>Değer</th><th>K/Z</th></tr></thead><tbody>`;let has=false;Object.keys(calculatedAssets).forEach(k=>{const d=calculatedAssets[k];if(d.qty>0.0001){has=true;const cp=marketPrices[k]||0,cv=d.qty*cp,up=cv-d.totalCost,cl=up>=0?'profit-text':'loss-text',pp=d.totalCost>0?(up/d.totalCost)*100:0;h+=`<tr><td><span class="asset-badge">${k}</span></td><td>${fmtN(d.qty)}</td><td>${fmtC(d.avgCost)}</td><td style="font-weight:bold;">${fmtC(cp)}</td><td>${fmtC(cv)}</td><td class="${cl}">${fmtC(up)}<br><small>(%${pp.toFixed(2)})</small></td></tr>`;}});if(!has)h+=`<tr><td colspan="6" style="text-align:center;color:var(--subtext)">Yok</td></tr>`;t.innerHTML=h+"</tbody>";}
+    
+    function renderTable(){
+        const t=document.getElementById('portfolioTable');
+        let h=`<thead><tr><th>T</th><th>Tar</th><th>Kod</th><th>Ad</th><th>Fiy</th><th>Tut</th><th>Sil</th></tr></thead><tbody>`;
+        const sorted=[...portfolio].sort((a,b)=>new Date(b.date)-new Date(a.date));
+        const totalPages = Math.ceil(sorted.length / itemsPerPage);
+        if(currentPage < 1) currentPage = 1;
+        if(currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const pageItems = sorted.slice(start, end);
+        if(sorted.length===0) h+=`<tr><td colspan="7" align="center" style="color:var(--subtext)">Yok</td></tr>`;
+        pageItems.forEach(i=>{const b=i.type==='sell'?'<span class="badge-sell">SAT</span>':'<span class="badge-buy">AL</span>';h+=`<tr><td>${b}</td><td>${new Date(i.date).toLocaleDateString('tr-TR')}</td><td><strong>${i.symbol}</strong></td><td>${fmtN(i.quantity)}</td><td>${fmtC(i.price)}</td><td>${fmtC(i.quantity*i.price)}</td><td><button class="delete-btn" onclick="window.requestDeleteTransaction(${i.id})">X</button></td></tr>`;});
+        t.innerHTML=h+"</tbody>";
+        document.getElementById('pageInfo').innerText = `Sayfa ${totalPages>0?currentPage:0} / ${totalPages}`;
+        document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+        document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+    }
+    
+    function renderDash(){
+        let tc=0,tv=0; Object.keys(calculatedAssets).forEach(k=>{const d=calculatedAssets[k];if(d.qty>0){tc+=d.totalCost;tv+=d.qty*(marketPrices[k]||0);}});
+        const up=tv-tc; 
+        document.getElementById('totalValue').innerText=fmtC(tv); 
+        document.getElementById('unrealizedPnL').innerText=fmtC(up); 
+        document.getElementById('unrealizedPnL').className=up>=0?'val profit':'val loss'; 
+        document.getElementById('realizedPnL').innerText=fmtC(totalRealizedPnL); 
+        document.getElementById('realizedPnL').className=totalRealizedPnL>=0?'val profit':'val loss';
+        
+        const sym = currentCurrency === 'TRY' ? 'TL' : '$';
+        document.querySelectorAll('.curr-symbol').forEach(el => el.innerText = sym);
+
+        const rate = (currentCurrency === 'USD' && marketPrices['USDTRY']) ? marketPrices['USDTRY'] : 1;
+        const displayTv = tv / rate; 
+        const displayTarget = targetAmount / rate; 
+
+        document.getElementById('currentProgressText').innerText = new Intl.NumberFormat('tr-TR', {maximumFractionDigits: 0}).format(displayTv);
+        document.getElementById('targetText').innerText = new Intl.NumberFormat('tr-TR', {maximumFractionDigits: 0}).format(displayTarget);
+        
+        let percent = displayTarget > 0 ? (displayTv / displayTarget) * 100 : 0; if(percent > 100) percent = 100;
+        document.getElementById('goalProgressBar').style.width = percent + "%";
+        const goalBtn = document.getElementById('editGoalBtn');
+        if(targetAmount === 1000000) { goalBtn.classList.add('btn-pulsing'); } else { goalBtn.classList.remove('btn-pulsing'); }
+        let currentRank = RANKS[0]; let rankIndex = 0;
+        for(let i=0; i < RANKS.length; i++) { if(percent >= RANKS[i].percent) { currentRank = RANKS[i]; rankIndex = i; } }
+        document.getElementById('rankIcon').innerText = currentRank.icon; document.getElementById('rankTitle').innerText = currentRank.title;
+    }
+</script>
+</body>
+</html>
