@@ -587,7 +587,7 @@
         currentUser=u; document.getElementById('login-screen').style.display='none'; document.getElementById('app-container').style.display='block';
         const r=doc(db,"portfoy_db",u+"_secure_data"); setDoc(r, {lastLogin: new Date().toISOString()}, {merge:true});
         startDataListener(u);
-        autoUpdateInterval = setInterval(() => window.fetchFromSheets(true), 900000); // 15dk
+        autoUpdateInterval = setInterval(() => window.fetchFromSheets(true), 30000); // 15dk
         window.fetchFromSheets(true); 
     }
     async function loginAdmin(){ 
@@ -684,3 +684,4 @@
 </script>
 </body>
 </html>
+
