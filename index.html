@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Portföy v51 (Dropdown Menu)</title>
+    <title>Portföy v68 (Admin Fix)</title>
     <meta name="theme-color" content="#2c3e50">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -29,7 +29,7 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text); margin: 0; padding: 20px; padding-bottom: 90px; transition: background 0.3s, color 0.3s; overflow-x: hidden;}
         .container { max-width: 1200px; margin: 0 auto; display: none; width: 100%; }
 
-        /* DROPDOWN MENU (YENİ) */
+        /* DROPDOWN MENU */
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content {
             display: none; position: absolute; right: 0; top: 40px;
@@ -47,7 +47,6 @@
         .dropdown-content a:hover { background-color: var(--menu-hover); }
         .dropdown-content.show { display: block; }
         .menu-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px; color: var(--text); }
-        
         @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* HEADER */
@@ -63,7 +62,7 @@
         #announcementBar { background-color: var(--warning-bg); color: var(--warning-text); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; display: none; align-items: center; justify-content: space-between; font-weight: bold; font-size: 0.9rem; box-shadow: var(--shadow); animation: slideDown 0.5s ease; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* DİĞER STİLLER (Aynı) */
+        /* ADMIN KONTROLLERİ */
         .admin-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
         .control-group { background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
         .control-group h3 { margin: 0 0 10px 0; font-size: 1rem; color: var(--primary); }
@@ -75,10 +74,12 @@
         input:checked + .slider { background-color: var(--danger); }
         input:checked + .slider:before { transform: translateX(24px); }
 
+        /* LIVE INDICATOR */
         .live-badge { font-size: 0.65rem; color: var(--success); font-weight: bold; background: rgba(39, 174, 96, 0.15); padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px; animation: pulse-green 2s infinite; margin-left: 10px; vertical-align: middle; border: 1px solid rgba(39, 174, 96, 0.3); }
         .live-dot { width: 6px; height: 6px; background-color: var(--success); border-radius: 50%; }
         @keyframes pulse-green { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
+        /* UI ELEMENTS */
         .trade-switch-container { display: flex; gap: 10px; margin-bottom: 15px; }
         .trade-btn { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid transparent; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; opacity: 0.5; background-color: var(--input-bg); color: var(--text); border-color: var(--border); }
         .trade-btn.buy-active { opacity: 1; background-color: var(--success); color: white; border-color: var(--success); transform: scale(1.02); box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3); }
@@ -224,6 +225,18 @@
     </div>
 </div>
 
+<div id="feedbackModalOverlay" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <h2 style="text-align:center; margin-top:0;">✉️ İletişim</h2>
+        <p style="color:var(--subtext); font-size:0.9rem;">Önerilerini veya hataları bize bildir.</p>
+        <textarea id="feedbackInput" class="app-input" rows="4" placeholder="Mesajınız..."></textarea>
+        <div class="modal-actions">
+            <button class="modal-btn btn-cancel" onclick="document.getElementById('feedbackModalOverlay').classList.remove('active')">İptal</button>
+            <button class="modal-btn btn-confirm" onclick="window.submitFeedback()">Gönder</button>
+        </div>
+    </div>
+</div>
+
 <div id="profileModalOverlay" class="custom-modal-overlay">
     <div class="custom-modal" style="text-align:left; width:90%; max-width:350px;">
         <h2 style="text-align:center; margin-top:0;">👤 Profilim</h2>
@@ -282,6 +295,7 @@
                 <button class="menu-btn" onclick="toggleMenu()">☰</button>
                 <div id="myDropdown" class="dropdown-content">
                     <a onclick="document.getElementById('infoModalOverlay').classList.add('active'); toggleMenu();">📖 Nasıl Çalışır?</a>
+                    <a onclick="document.getElementById('feedbackModalOverlay').classList.add('active'); toggleMenu();">✉️ İletişim</a>
                     <a onclick="window.toggleTheme(); toggleMenu();">🌙 Tema Değiştir</a>
                     <a onclick="window.openProfile(); toggleMenu();">👤 Profilim</a>
                     <a onclick="window.requestLogout()" style="color:var(--danger);">🚪 Çıkış Yap</a>
@@ -316,13 +330,21 @@
                     <div class="form-group"><input type="date" id="buyDate" class="app-input"></div>
                     
                     <div class="form-group" style="position:relative;">
-                        <div id="searchModeDiv">
-                            <input type="text" id="assetSearchInput" class="app-input" placeholder="Hisse Ara (Örn: Akbank)" autocomplete="off">
-                            <div id="searchResults" class="search-results"></div>
-                            <a class="manual-toggle" onclick="toggleSearchMode()">Listede bulamadım, kendim yazmak istiyorum</a>
+                        <div id="buyInputDiv">
+                            <div id="searchModeDiv">
+                                <input type="text" id="assetSearchInput" class="app-input" placeholder="Hisse Ara (Örn: Akbank)" autocomplete="off">
+                                <div id="searchResults" class="search-results"></div>
+                                <a class="manual-toggle" onclick="toggleSearchMode()">Listede bulamadım, kendim yazmak istiyorum</a>
+                            </div>
+                            <input type="text" id="assetSymbol" class="app-input" style="display:none;" placeholder="Kod Girin (Örn: THYAO)">
+                            <a id="backToSearch" class="manual-toggle" style="display:none;" onclick="toggleSearchMode()">Listeden seçmek istiyorum</a>
                         </div>
-                        <input type="text" id="assetSymbol" class="app-input" style="display:none;" placeholder="Kod Girin (Örn: THYAO)">
-                        <a id="backToSearch" class="manual-toggle" style="display:none;" onclick="toggleSearchMode()">Listeden seçmek istiyorum</a>
+
+                        <div id="sellInputDiv" style="display:none;">
+                            <select id="sellAssetSelect" class="app-input" onchange="window.onSellSelectChange()">
+                                <option value="">Satılacak varlık seçin...</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="form-group"><input type="number" id="quantity" class="app-input" step="0.01" placeholder="Adet"></div>
@@ -369,20 +391,22 @@
                 <div class="control-group">
                     <h3>🚧 Bakım Modu</h3>
                     <label class="switch-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                        <div class="toggle-switch">
-                            <input type="checkbox" id="maintenanceSwitch">
-                            <span class="slider"></span>
-                        </div>
+                        <div class="toggle-switch"><input type="checkbox" id="maintenanceSwitch"><span class="slider"></span></div>
                         <span>Sistemi Kitle</span>
                     </label>
                 </div>
                 <div class="control-group">
-                    <h3>📢 Duyuru</h3>
-                    <input type="text" id="announcementInput" class="app-input" placeholder="Duyuru mesajı..." style="margin-bottom:10px;">
+                    <h3>📢 Sistem Duyurusu</h3>
+                    <input type="text" id="announcementInput" class="app-input" placeholder="Mesaj..." style="margin-bottom:10px;">
                     <button class="modal-btn btn-confirm" onclick="window.saveSystemConfig()">Yayınla</button>
                 </div>
             </div>
         </div>
+    </div>
+    
+    <div class="card admin-card">
+        <h2>📨 Mesajlar</h2>
+        <div class="card-content table-container"><table id="adminFeedbackTable"><thead><tr><th>Tarih</th><th>Kullanıcı</th><th>Mesaj</th><th>İşlem</th></tr></thead><tbody id="adminFeedbackList"></tbody></table></div>
     </div>
 
     <div class="dashboard-summary"><div class="summary-card admin-card"><h3>Kullanıcı</h3><div class="user-count" id="adminTotalUsers">0</div></div><div class="summary-card admin-card"><h3>İşlem</h3><div class="user-count" id="adminTotalTrans">0</div></div></div>
@@ -397,11 +421,11 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, deleteDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // AYARLAR
     const ADMIN_USERNAME = "admin";
-    const ADMIN_PASSWORD = "123"; 
+    // ADMIN_PASSWORD is now dynamic from Firebase
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyBzH-P25cXj3uwdVUeHci48DJvROnNWgRH3fmoxWkqgY2yI-IGFtovSt3rw28PcRzvFw/exec"; 
     const firebaseConfig = { apiKey: "AIzaSyBBWQSCtTauCVLROzwpQOj053ZTtQgHJjk", authDomain: "portfo-4c139.firebaseapp.com", projectId: "portfo-4c139", storageBucket: "portfo-4c139.firebasestorage.app", messagingSenderId: "887822897950", appId: "1:887822897950:web:49297cf4c39c4edf96af0f", measurementId: "G-Z7JXVPQQZH" };
 
@@ -416,6 +440,7 @@
     let modalCallback = null;
     let currentPage = 1; const itemsPerPage = 5;
     let autoUpdateInterval = null;
+    let feedbackList = [];
 
     const ASSETS_DB = [
         {c:"THYAO",n:"Türk Hava Yolları"},{c:"GARAN",n:"Garanti Bankası"},{c:"AKBNK",n:"Akbank"},{c:"ASELS",n:"Aselsan"},{c:"SISE",n:"Şişe Cam"},
@@ -437,7 +462,8 @@
         {c:"ALFAS",n:"Alfa Solar"},{c:"ASTOR",n:"Astor Enerji"},{c:"CVKMD",n:"CVK Maden"},{c:"KCAER",n:"Kocaer Çelik"},
         {c:"IZENR",n:"İzdemir Enerji"},{c:"TATEN",n:"Tatlıpınar Enerji"},{c:"ENERY",n:"Enerya"},{c:"AHGAZ",n:"Ahlatcı Doğalgaz"},
         {c:"CANTE",n:"Çan2 Termik"},{c:"QUAGR",n:"Qua Granite"},{c:"CIMSA",n:"Çimsa"},{c:"AKCNS",n:"Akçansa"},
-        {c:"BUCIM",n:"Bursa Çimento"},{c:"NUHCM",n:"Nuh Çimento"},{c:"OYAKC",n:"Oyak Çimento"},{c:"BTC",n:"Bitcoin"},{c:"ETH",n:"Ethereum"}
+        {c:"BUCIM",n:"Bursa Çimento"},{c:"NUHCM",n:"Nuh Çimento"},{c:"OYAKC",n:"Oyak Çimento"},{c:"BTC",n:"Bitcoin"},{c:"ETH",n:"Ethereum"},
+        {c:"GRAMALTIN", n:"Gram Altın (24 Ayar)"}, {c:"HAREM", n:"Gram Altın (Harem)"}
     ];
 
     // SEARCH LOGIC
@@ -472,7 +498,7 @@
     function autoFillPrice(code) {
         if(marketPrices[code]) {
             document.getElementById('price').value = marketPrices[code];
-            showToast(`✅ ${code}: ${marketPrices[code]} ₺`);
+            showToast(`✅ Fiyat: ${marketPrices[code]} ₺`);
         }
     }
     
@@ -491,7 +517,7 @@
         document.getElementById("myDropdown").classList.toggle("show");
     }
     window.onclick = function(event) {
-        if (!event.target.matches('.menu-btn')) {
+        if (!event.target.matches('.menu-btn') && !event.target.matches('.icon-btn')) {
             var dropdowns = document.getElementsByClassName("dropdown-content");
             for (var i = 0; i < dropdowns.length; i++) {
                 var openDropdown = dropdowns[i];
@@ -514,23 +540,17 @@
     window.requestDeleteAccount = function() { document.getElementById('profileModalOverlay').classList.remove('active'); showModal("HESABI SİL", "⚠️ BU İŞLEM GERİ ALINAMAZ! Tüm verilerin silinecek.", "danger", null, async () => { if(currentUser && docRef) { try { await deleteDoc(docRef); localStorage.removeItem('portfoy_user'); showToast("🗑️ Silindi."); setTimeout(() => location.reload(), 2000); } catch (e) { alert("Hata"); } } }); }
     window.adminDeleteUser = async function(targetUser) { if(confirm(`⚠️ DİKKAT: ${targetUser} kullanıcısını silmek istediğine emin misin?`)) { try { await deleteDoc(doc(db, "portfoy_db", targetUser + "_secure_data")); alert("Kullanıcı silindi."); loginAdmin(); } catch(e) { alert("Hata oluştu: " + e.message); } } }
 
-    // PASSWORD CHANGE
+    // FEEDBACK & PASSWORD
+    window.submitFeedback = async function() { const msg = document.getElementById('feedbackInput').value.trim(); if(!msg) { alert("Mesaj yazın."); return; } const payload = { user: currentUser, date: new Date().toLocaleString('tr-TR'), text: msg }; try { const adminRef = doc(db, "portfoy_db", "ADMIN_CONFIG"); await updateDoc(adminRef, { messages: arrayUnion(payload) }); document.getElementById('feedbackModalOverlay').classList.remove('active'); document.getElementById('feedbackInput').value = ""; showToast("✅ Gönderildi!"); } catch(e) { try { const adminRef = doc(db, "portfoy_db", "ADMIN_CONFIG"); await setDoc(adminRef, { messages: [payload] }, { merge: true }); document.getElementById('feedbackModalOverlay').classList.remove('active'); showToast("✅ Gönderildi!"); } catch(err) { alert("Hata!"); } } }
+    window.deleteFeedback = async function(index) { const msgToDelete = feedbackList[index]; if(confirm("Sil?")) { try { const adminRef = doc(db, "portfoy_db", "ADMIN_CONFIG"); await updateDoc(adminRef, { messages: arrayRemove(msgToDelete) }); loginAdmin(); } catch(e) { alert("Hata"); } } }
     window.togglePassSection = function() { const sec = document.getElementById('passChangeSection'); sec.style.display = sec.style.display === 'none' ? 'block' : 'none'; }
-    window.saveNewPassword = async function() {
-        const newPass = document.getElementById('newProfilePass').value;
-        if(!newPass || newPass.length < 3) { alert("Şifre çok kısa!"); return; }
-        try {
-            await setDoc(doc(db, "portfoy_db", currentUser + "_secure_data"), {password: newPass}, {merge: true});
-            alert("Şifre güncellendi!");
-            document.getElementById('newProfilePass').value = ""; document.getElementById('passChangeSection').style.display='none';
-        } catch(e) { alert("Hata"); }
-    }
+    window.saveNewPassword = async function() { const newPass = document.getElementById('newProfilePass').value; if(!newPass || newPass.length < 3) { alert("Kısa şifre!"); return; } try { await setDoc(doc(db, "portfoy_db", currentUser + "_secure_data"), {password: newPass}, {merge: true}); alert("Şifre güncellendi!"); document.getElementById('newProfilePass').value = ""; document.getElementById('passChangeSection').style.display='none'; } catch(e) { alert("Hata"); } }
     
     // ADMIN LOGIC
     window.saveSystemConfig = async function() {
         const maint = document.getElementById('maintenanceSwitch').checked;
         const ann = document.getElementById('announcementInput').value;
-        try { await setDoc(doc(db, "portfoy_db", "ADMIN_CONFIG"), { maintenance: maint, announcement: ann }, { merge: true }); alert("Ayarlar yayınlandı!"); } catch(e) { alert("Hata!"); }
+        try { await setDoc(doc(db, "portfoy_db", "ADMIN_CONFIG"), { maintenance: maint, announcement: ann }, { merge: true }); alert("Yayınlandı!"); } catch(e) { alert("Hata!"); }
     }
 
     // STARTUP
@@ -538,7 +558,6 @@
         const st = localStorage.getItem('theme'); if(st==='dark'){document.body.classList.add('dark-mode');document.getElementById('themeBtn').innerText='☀️';}
         const sc = localStorage.getItem('currency'); if(sc) currentCurrency = sc; document.getElementById('currencyBtn').innerText = currentCurrency;
         
-        // SYSTEM LISTENER
         onSnapshot(doc(db, "portfoy_db", "ADMIN_CONFIG"), (s) => {
             if(s.exists()) {
                 const d = s.data();
@@ -561,7 +580,6 @@
     window.toggleSummary=function(){document.getElementById('assetSummaryContent').classList.toggle('hidden');document.getElementById('summaryToggleIcon').classList.toggle('rotate-icon');}
     window.changePage = function(d) { currentPage += d; renderTable(); }
 
-    // CURRENCY
     window.toggleCurrency = function() {
         currentCurrency = currentCurrency === 'TRY' ? 'USD' : 'TRY';
         localStorage.setItem('currency', currentCurrency);
@@ -583,13 +601,27 @@
     window.handleLogin=async function(){
         const u=document.getElementById('usernameInput').value.trim().toLowerCase(); const p=document.getElementById('passwordInput').value.trim();
         
-        // Maintenance
+        // Maintenance Check
         const sysSnap = await getDoc(doc(db, "portfoy_db", "ADMIN_CONFIG"));
         if(sysSnap.exists() && sysSnap.data().maintenance && u !== ADMIN_USERNAME) { alert("🚧 Sistem şu an bakımda."); return; }
 
-        if(u===ADMIN_USERNAME&&p===ADMIN_PASSWORD){localStorage.setItem('portfoy_user',ADMIN_USERNAME);loginAdmin();return;}
-        
-        // TR Fix
+        // Admin Login Logic
+        if(u===ADMIN_USERNAME) {
+            const adminSnap = await getDoc(doc(db, "portfoy_db", "ADMIN_CONFIG"));
+            if(adminSnap.exists()) {
+                const realAdminPass = adminSnap.data().admin_pass;
+                if(p === realAdminPass) {
+                    localStorage.setItem('portfoy_user', ADMIN_USERNAME);
+                    loginAdmin();
+                    return;
+                } else {
+                    alert("Hatalı Admin Şifresi");
+                    return;
+                }
+            }
+        }
+
+        // User Login Logic
         const cu=u.replace(/[^a-z0-9çğıöşü]/g,""); 
         if(cu.length<3)return; document.getElementById('loginBtn').disabled=true;
         try{ const r=doc(db,"portfoy_db",cu+"_secure_data"); const s=await getDoc(r);
@@ -597,6 +629,7 @@
         else{if(confirm("Yeni hesap?")){await setDoc(r,{password:p,portfolio:[],prices:{},target:1000000,createdAt:new Date().toISOString(), lastLogin: new Date().toISOString()});localStorage.setItem('portfoy_user',cu);loginSuccess(cu);}else document.getElementById('loginBtn').disabled=false;}
         }catch(e){alert("Hata");document.getElementById('loginBtn').disabled=false;}
     }
+
     function loginSuccess(u){
         currentUser=u; document.getElementById('login-screen').style.display='none'; document.getElementById('app-container').style.display='block';
         const r=doc(db,"portfoy_db",u+"_secure_data"); setDoc(r, {lastLogin: new Date().toISOString()}, {merge:true});
@@ -604,12 +637,41 @@
         autoUpdateInterval = setInterval(() => window.fetchFromSheets(true), 900000); 
         window.fetchFromSheets(true); 
     }
+    
     async function loginAdmin(){ 
         document.getElementById('login-screen').style.display='none'; document.getElementById('admin-container').style.display='block'; document.querySelector('.mobile-bottom-nav').style.display='none';
+        
+        // Config Load
         const sys = await getDoc(doc(db, "portfoy_db", "ADMIN_CONFIG"));
-        if(sys.exists()) { document.getElementById('maintenanceSwitch').checked = sys.data().maintenance || false; document.getElementById('announcementInput').value = sys.data().announcement || ""; }
-        const t=document.getElementById('adminUserList'); t.innerHTML='<tr><td colspan="5">Yükleniyor...</td></tr>'; try{const q=await getDocs(collection(db,"portfoy_db"));let h="",c=0,tt=0;q.forEach(d=>{if(d.id.includes('_secure')){const dt=d.data();const un=d.id.replace('_secure_data','');const tx=dt.portfolio?.length||0;c++;tt+=tx;const last=dt.lastLogin?new Date(dt.lastLogin).toLocaleString('tr-TR'):(dt.createdAt?new Date(dt.createdAt).toLocaleDateString('tr-TR'):'-');h+=`<tr><td><strong>${un}</strong></td><td>${last}</td><td>${dt.password}</td><td>${tx}</td><td><button class="admin-btn-del" onclick="window.adminDeleteUser('${un}')">Sil</button></td></tr>`;}});t.innerHTML=h;document.getElementById('adminTotalUsers').innerText=c;document.getElementById('adminTotalTrans').innerText=tt;}catch(e){t.innerHTML='<tr><td>Hata</td></tr>';} 
+        if(sys.exists()) {
+            document.getElementById('maintenanceSwitch').checked = sys.data().maintenance || false;
+            document.getElementById('announcementInput').value = sys.data().announcement || "";
+            
+            // LOAD FEEDBACK
+            const fbList = document.getElementById('adminFeedbackList');
+            fbList.innerHTML = '';
+            if(sys.data().messages && sys.data().messages.length > 0) {
+                feedbackList = sys.data().messages;
+                sys.data().messages.forEach((m, i) => {
+                    fbList.innerHTML += `<tr><td>${m.date}</td><td>${m.user}</td><td>${m.text}</td><td><button class="admin-btn-del" onclick="window.deleteFeedback(${i})">Sil</button></td></tr>`;
+                });
+            } else { fbList.innerHTML = '<tr><td colspan="4">Mesaj yok.</td></tr>'; }
+        }
+
+        const t=document.getElementById('adminUserList'); t.innerHTML='<tr><td colspan="5">Yükleniyor...</td></tr>'; 
+        try{
+            const q=await getDocs(collection(db,"portfoy_db"));let h="",c=0,tt=0;
+            q.forEach(d=>{
+                if(d.id.includes('_secure')){
+                    const dt=d.data();const un=d.id.replace('_secure_data','');const tx=dt.portfolio?.length||0;c++;tt+=tx;
+                    const last=dt.lastLogin?new Date(dt.lastLogin).toLocaleString('tr-TR'):(dt.createdAt?new Date(dt.createdAt).toLocaleDateString('tr-TR'):'-');
+                    h+=`<tr><td><strong>${un}</strong></td><td>${last}</td><td>${dt.password}</td><td>${tx}</td><td><button class="admin-btn-del" onclick="window.adminDeleteUser('${un}')">Sil</button></td></tr>`;
+                }
+            });
+            t.innerHTML=h;document.getElementById('adminTotalUsers').innerText=c;document.getElementById('adminTotalTrans').innerText=tt;
+        }catch(e){t.innerHTML='<tr><td>Hata</td></tr>';} 
     }
+    
     window.logout=function(){if(confirm("Çıkış?")){localStorage.removeItem('portfoy_user');location.reload();}}
     function startDataListener(u){docRef=doc(db,"portfoy_db",u+"_secure_data");if(unsubscribe)unsubscribe();unsubscribe=onSnapshot(docRef,(s)=>{if(s.exists()){const d=s.data();portfolio=d.portfolio||[];marketPrices=d.prices||{};targetAmount=d.target||1000000;userCreationDate=d.createdAt?new Date(d.createdAt).toLocaleDateString('tr-TR'):"-";calculate();render();}});}
     async function saveDataToCloud(){if(currentUser)try{await setDoc(docRef,{portfolio,prices:marketPrices,target:targetAmount,lastUpdate:new Date().toISOString()},{merge:true});}catch(e){}}
@@ -641,18 +703,44 @@
         const btnSell = document.getElementById('btnSell');
         const submitBtn = document.getElementById('submitBtn');
         const label = document.getElementById('priceLabel');
+        const buyDiv = document.getElementById('buyInputDiv');
+        const sellDiv = document.getElementById('sellInputDiv');
 
         if(type === 'buy') {
             btnBuy.classList.add('buy-active'); btnSell.classList.remove('sell-active');
             submitBtn.innerText = "Alış Kaydet"; submitBtn.style.backgroundColor = "var(--success)"; label.innerText = "Alış Fiyatı (₺)";
+            buyDiv.style.display = 'block'; sellDiv.style.display = 'none';
         } else {
             btnBuy.classList.remove('buy-active'); btnSell.classList.add('sell-active');
             submitBtn.innerText = "Satış Kaydet"; submitBtn.style.backgroundColor = "var(--danger)"; label.innerText = "Satış Fiyatı (₺)";
+            buyDiv.style.display = 'none'; sellDiv.style.display = 'block';
+            populateSellSelect();
         }
     }
+
+    function populateSellSelect() {
+        const sel = document.getElementById('sellAssetSelect');
+        sel.innerHTML = '<option value="">Satılacak varlık seçin...</option>';
+        Object.keys(calculatedAssets).forEach(sym => {
+            if (calculatedAssets[sym].qty > 0) {
+                const opt = document.createElement('option');
+                opt.value = sym; opt.text = `${sym} (Elde: ${fmtN(calculatedAssets[sym].qty)})`;
+                sel.appendChild(opt);
+            }
+        });
+    }
+    window.onSellSelectChange = function() { const sel = document.getElementById('sellAssetSelect'); if(sel.value) autoFillPrice(sel.value); }
     window.togglePriceLabel = function() { } 
 
-    window.addTransaction=function(){const t=document.getElementById('transType').value,d=document.getElementById('buyDate').value,s=document.getElementById('assetSymbol').value.trim(),q=parseFloat(document.getElementById('quantity').value),p=parseFloat(document.getElementById('price').value);if(!s||!q||!p)return; if(t==='sell'){const h=calculatedAssets[s]?.qty||0;if(q>h){showToast("Yetersiz bakiye");return;}} else if(!marketPrices[s])marketPrices[s]=p; portfolio.push({id:Date.now(),type:t,date:d,symbol:s,quantity:q,price:p}); saveDataToCloud(); showToast("Kaydedildi");}
+    window.addTransaction=function(){
+        const t=document.getElementById('transType').value; const d=document.getElementById('buyDate').value;
+        let s=""; if(t==='buy') s=document.getElementById('assetSymbol').value.trim(); else s=document.getElementById('sellAssetSelect').value;
+        const q=parseFloat(document.getElementById('quantity').value); const p=parseFloat(document.getElementById('price').value);
+        if(!s||!q||!p) { showToast("Eksik bilgi!"); return; }
+        if(t==='sell'){const h=calculatedAssets[s]?.qty||0;if(q>h){showToast("Yetersiz bakiye");return;}} else if(!marketPrices[s])marketPrices[s]=p; 
+        portfolio.push({id:Date.now(),type:t,date:d,symbol:s,quantity:q,price:p}); saveDataToCloud(); showToast("Kaydedildi");
+        if(t==='sell') populateSellSelect();
+    }
     window.updatePrice=function(s){const v=parseFloat(document.getElementById(`price-input-${s}`).value);if(!isNaN(v)){marketPrices[s]=v;saveDataToCloud();showToast("Fiyat Güncel");}}
     document.getElementById('buyDate').valueAsDate=new Date();
 
