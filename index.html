@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Portföy v52 (Zaman Damgalı)</title>
+    <title>Portföy v51 (Dropdown Menu)</title>
     <meta name="theme-color" content="#2c3e50">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,37 +16,54 @@
             --border: #dfe6e9; --input-bg: #ffffff; --warning-bg: #f1c40f; --warning-text: #7f6000;
             --goal-track: #e0e0e0; --goal-fill: linear-gradient(90deg, #3498db, #8e44ad);
             --shadow: 0 4px 12px rgba(0,0,0,0.08); --modal-overlay: rgba(0, 0, 0, 0.5);
-            --search-hover: #f8f9fa;
+            --search-hover: #f8f9fa; --menu-hover: #f1f2f6;
         }
         body.dark-mode {
             --bg-color: #121212; --card-bg: #1e1e1e; --primary: #34495e; --accent: #3498db;
             --success: #2ecc71; --danger: #e74c3c; --text: #e0e0e0; --subtext: #b0b3b8;
             --border: #333333; --input-bg: #2c2c2c; --goal-track: #333; --warning-bg: #d35400; --warning-text: #fff;
             --shadow: 0 4px 12px rgba(0,0,0,0.3); --modal-overlay: rgba(0, 0, 0, 0.8);
-            --search-hover: #2a2a2a;
+            --search-hover: #2a2a2a; --menu-hover: #333;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text); margin: 0; padding: 20px; padding-bottom: 90px; transition: background 0.3s, color 0.3s; overflow-x: hidden;}
         .container { max-width: 1200px; margin: 0 auto; display: none; width: 100%; }
 
-        /* SON GÜNCELLEME ETİKETİ (YENİ) */
-        .last-update-label {
-            font-size: 0.75rem; color: var(--subtext); font-weight: normal;
-            margin-left: auto; /* Sağa yaslar */
-            display: block; margin-top: 5px; text-align: right;
+        /* DROPDOWN MENU (YENİ) */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; right: 0; top: 40px;
+            background-color: var(--card-bg); min-width: 180px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2); border-radius: 10px;
+            z-index: 2000; border: 1px solid var(--border); overflow: hidden;
+            animation: slideIn 0.2s ease;
         }
+        .dropdown-content a {
+            color: var(--text); padding: 12px 16px; text-decoration: none;
+            display: block; font-size: 0.9rem; cursor: pointer;
+            border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;
+        }
+        .dropdown-content a:last-child { border-bottom: none; }
+        .dropdown-content a:hover { background-color: var(--menu-hover); }
+        .dropdown-content.show { display: block; }
+        .menu-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 5px; color: var(--text); }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* HEADER */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: var(--card-bg); padding: 15px 20px; border-radius: 12px; box-shadow: var(--shadow); }
+        h1 { font-size: 1.3rem; color: var(--text); margin: 0; font-weight: 800; }
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+        
+        /* CURRENCY BTN */
+        .currency-btn { font-weight: 800; color: var(--success); border: 2px solid var(--success); border-radius: 20px; padding: 5px 12px; min-width: 55px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; background: transparent; }
+        .currency-btn:hover { background: var(--success); color: white; }
 
         /* DUYURU BANDI */
-        #announcementBar {
-            background-color: var(--warning-bg); color: var(--warning-text);
-            padding: 10px 15px; border-radius: 8px; margin-bottom: 15px;
-            display: none; align-items: center; justify-content: space-between;
-            font-weight: bold; font-size: 0.9rem; box-shadow: var(--shadow);
-            animation: slideDown 0.5s ease;
-        }
+        #announcementBar { background-color: var(--warning-bg); color: var(--warning-text); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; display: none; align-items: center; justify-content: space-between; font-weight: bold; font-size: 0.9rem; box-shadow: var(--shadow); animation: slideDown 0.5s ease; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ADMIN KONTROLLERİ */
+        /* DİĞER STİLLER (Aynı) */
         .admin-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
         .control-group { background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
         .control-group h3 { margin: 0 0 10px 0; font-size: 1rem; color: var(--primary); }
@@ -58,19 +75,9 @@
         input:checked + .slider { background-color: var(--danger); }
         input:checked + .slider:before { transform: translateX(24px); }
 
-        /* LIVE INDICATOR */
-        .live-badge {
-            font-size: 0.65rem; color: var(--success); font-weight: bold; 
-            background: rgba(39, 174, 96, 0.15); padding: 3px 8px; border-radius: 12px;
-            display: inline-flex; align-items: center; gap: 5px; animation: pulse-green 2s infinite;
-            margin-left: 10px; vertical-align: middle; border: 1px solid rgba(39, 174, 96, 0.3);
-        }
+        .live-badge { font-size: 0.65rem; color: var(--success); font-weight: bold; background: rgba(39, 174, 96, 0.15); padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px; animation: pulse-green 2s infinite; margin-left: 10px; vertical-align: middle; border: 1px solid rgba(39, 174, 96, 0.3); }
         .live-dot { width: 6px; height: 6px; background-color: var(--success); border-radius: 50%; }
         @keyframes pulse-green { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        /* UI ELEMENTS */
-        .currency-btn { font-weight: 800; color: var(--success); border: 2px solid var(--success); border-radius: 20px; padding: 5px 12px; min-width: 55px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; background: transparent; }
-        .currency-btn:hover { background: var(--success); color: white; }
 
         .trade-switch-container { display: flex; gap: 10px; margin-bottom: 15px; }
         .trade-btn { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid transparent; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; opacity: 0.5; background-color: var(--input-bg); color: var(--text); border-color: var(--border); }
@@ -102,15 +109,6 @@
         .login-box { background: var(--card-bg); padding: 40px 30px; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); text-align: center; width: 100%; max-width: 380px; }
         .login-box input { width: 100%; padding: 14px; margin: 10px 0; border: 2px solid var(--border); background: var(--input-bg); color: var(--text); border-radius: 10px; font-size: 16px; text-align: center; }
         .login-box button { width: 100%; padding: 14px; background: var(--accent); color: white; margin-top: 20px; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; }
-
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: var(--card-bg); padding: 15px 20px; border-radius: 12px; box-shadow: var(--shadow); }
-        h1 { font-size: 1.3rem; color: var(--text); margin: 0; font-weight: 800; }
-        .header-actions { display: flex; gap: 10px; align-items: center; }
-        .icon-btn { background: none; border: none; font-size: 1.4rem; cursor: pointer; padding: 5px; transition: transform 0.2s; }
-        .icon-btn:hover { transform: scale(1.1); }
-        .info-btn { background: transparent; border: 1px solid var(--subtext); color: var(--text); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-right: 5px; }
-        .info-btn:hover { background: var(--text); color: var(--bg-color); border-color: var(--text); }
-        .logout-btn { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
 
         .info-content { text-align: left; max-height: 60vh; overflow-y: auto; padding-right: 10px; }
         .info-content h3 { color: var(--accent); margin-top: 0; margin-bottom: 10px; font-size: 1.1rem; }
@@ -161,8 +159,6 @@
         th { background-color: rgba(0,0,0,0.03); color: var(--subtext); font-weight: 700; font-size: 0.75rem; }
         .profit-text { color: var(--success); font-weight: 700; }
         .loss-text { color: var(--danger); font-weight: 700; }
-        .badge-buy { background: rgba(39, 174, 96, 0.1); color: var(--success); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; border: 1px solid var(--success);}
-        .badge-sell { background: rgba(192, 57, 43, 0.1); color: var(--danger); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; border: 1px solid var(--danger);}
         .asset-badge { background: var(--primary); color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 500;}
         .pagination { display: flex; justify-content: center; align-items: center; margin-top: 15px; gap: 10px; padding: 10px; }
         .page-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
@@ -263,6 +259,7 @@
         <button id="loginBtn" onclick="window.handleLogin()">Giriş Yap</button>
         <div id="loginMsg" style="margin-top:10px; font-size:0.9rem; color:var(--danger); min-height:20px;"></div>
     </div>
+    
     <div style="margin-top:20px; text-align:center; color:white; font-size:0.9rem; max-width:400px; line-height:1.5;">
         <h3>👋 Hoş Geldiniz</h3>
         <p>Burası kişisel yatırım takip sistemidir.</p>
@@ -281,10 +278,15 @@
         <h1>☁️ Portföyüm</h1>
         <div class="header-actions">
             <button class="currency-btn" id="currencyBtn" onclick="window.toggleCurrency()">TRY</button>
-            <button class="info-btn" onclick="document.getElementById('infoModalOverlay').classList.add('active')">Nasıl Çalışır?</button>
-            <button class="icon-btn" id="themeBtn" onclick="window.toggleTheme()">🌙</button>
-            <button class="icon-btn" onclick="window.openProfile()">👤</button>
-            <button class="logout-btn" onclick="window.requestLogout()">Çıkış</button>
+            <div class="dropdown">
+                <button class="menu-btn" onclick="toggleMenu()">☰</button>
+                <div id="myDropdown" class="dropdown-content">
+                    <a onclick="document.getElementById('infoModalOverlay').classList.add('active'); toggleMenu();">📖 Nasıl Çalışır?</a>
+                    <a onclick="window.toggleTheme(); toggleMenu();">🌙 Tema Değiştir</a>
+                    <a onclick="window.openProfile(); toggleMenu();">👤 Profilim</a>
+                    <a onclick="window.requestLogout()" style="color:var(--danger);">🚪 Çıkış Yap</a>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -332,9 +334,6 @@
                 <h2>💹 Fiyatlar <div class="live-badge" title="Otomatik Güncelleniyor"><span class="live-dot"></span> CANLI</div></h2>
                 <div class="card-content">
                     <div id="priceListContainer"></div>
-                    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-                       <span class="last-update-label" id="lastUpdateLabel"></span>
-                    </div>
                     <p class="legal-disclaimer">⚠️ Veriler Google Finance kaynaklıdır, 15dk gecikmelidir. Yatırım tavsiyesi değildir.</p>
                 </div>
             </div>
@@ -379,7 +378,7 @@
                 </div>
                 <div class="control-group">
                     <h3>📢 Duyuru</h3>
-                    <input type="text" id="announcementInput" class="app-input" placeholder="Duyuru mesajını buraya yazın..." style="margin-bottom:10px;">
+                    <input type="text" id="announcementInput" class="app-input" placeholder="Duyuru mesajı..." style="margin-bottom:10px;">
                     <button class="modal-btn btn-confirm" onclick="window.saveSystemConfig()">Yayınla</button>
                 </div>
             </div>
@@ -438,8 +437,7 @@
         {c:"ALFAS",n:"Alfa Solar"},{c:"ASTOR",n:"Astor Enerji"},{c:"CVKMD",n:"CVK Maden"},{c:"KCAER",n:"Kocaer Çelik"},
         {c:"IZENR",n:"İzdemir Enerji"},{c:"TATEN",n:"Tatlıpınar Enerji"},{c:"ENERY",n:"Enerya"},{c:"AHGAZ",n:"Ahlatcı Doğalgaz"},
         {c:"CANTE",n:"Çan2 Termik"},{c:"QUAGR",n:"Qua Granite"},{c:"CIMSA",n:"Çimsa"},{c:"AKCNS",n:"Akçansa"},
-        {c:"BUCIM",n:"Bursa Çimento"},{c:"NUHCM",n:"Nuh Çimento"},{c:"OYAKC",n:"Oyak Çimento"},{c:"BTC",n:"Bitcoin"},{c:"ETH",n:"Ethereum"},
-        {c:"GRAMALTIN", n:"Gram Altın (24 Ayar)"}, {c:"HAREM", n:"Gram Altın (Harem)"}
+        {c:"BUCIM",n:"Bursa Çimento"},{c:"NUHCM",n:"Nuh Çimento"},{c:"OYAKC",n:"Oyak Çimento"},{c:"BTC",n:"Bitcoin"},{c:"ETH",n:"Ethereum"}
     ];
 
     // SEARCH LOGIC
@@ -474,7 +472,7 @@
     function autoFillPrice(code) {
         if(marketPrices[code]) {
             document.getElementById('price').value = marketPrices[code];
-            showToast(`✅ ${code} Fiyatı (${marketPrices[code]} ₺) Otomatik Girildi`);
+            showToast(`✅ ${code}: ${marketPrices[code]} ₺`);
         }
     }
     
@@ -485,6 +483,22 @@
             searchDiv.style.display = 'none'; manualInput.style.display = 'block'; backLink.style.display = 'block'; manualInput.value = ''; manualInput.focus();
         } else {
             searchDiv.style.display = 'block'; manualInput.style.display = 'none'; backLink.style.display = 'none'; searchInput.value = '';
+        }
+    }
+    
+    // MENU DROPDOWN
+    window.toggleMenu = function() {
+        document.getElementById("myDropdown").classList.toggle("show");
+    }
+    window.onclick = function(event) {
+        if (!event.target.matches('.menu-btn')) {
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            for (var i = 0; i < dropdowns.length; i++) {
+                var openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('show')) {
+                    openDropdown.classList.remove('show');
+                }
+            }
         }
     }
 
@@ -587,7 +601,7 @@
         currentUser=u; document.getElementById('login-screen').style.display='none'; document.getElementById('app-container').style.display='block';
         const r=doc(db,"portfoy_db",u+"_secure_data"); setDoc(r, {lastLogin: new Date().toISOString()}, {merge:true});
         startDataListener(u);
-        autoUpdateInterval = setInterval(() => window.fetchFromSheets(true), 30000); // 15dk
+        autoUpdateInterval = setInterval(() => window.fetchFromSheets(true), 900000); 
         window.fetchFromSheets(true); 
     }
     async function loginAdmin(){ 
@@ -614,18 +628,28 @@
                 }
             });
             saveDataToCloud();
-            
-            // TIME STAMP
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('tr-TR');
-            // If you want to display it, uncomment next line and add element
-            // document.getElementById('lastUpdateLabel').innerText = "Son Güncelleme: " + timeStr;
-            
-        } catch (error) { if(!silent) showToast("⚠️ Veri bekleniyor..."); }
+        } catch (error) {
+            if(!silent) showToast("⚠️ Veri bekleniyor...");
+        }
     }
 
     function showToast(m){const x=document.getElementById("toast");x.innerText=m;x.className="show";setTimeout(()=>{x.className=x.className.replace("show","");},3000);}
-    window.setTradeType = function(type) { document.getElementById('transType').value = type; const btnBuy = document.getElementById('btnBuy'); const btnSell = document.getElementById('btnSell'); const submitBtn = document.getElementById('submitBtn'); const label = document.getElementById('priceLabel'); if(type === 'buy') { btnBuy.classList.add('buy-active'); btnSell.classList.remove('sell-active'); submitBtn.innerText = "Alış Kaydet"; submitBtn.style.backgroundColor = "var(--success)"; label.innerText = "Alış Fiyatı (₺)"; } else { btnBuy.classList.remove('buy-active'); btnSell.classList.add('sell-active'); submitBtn.innerText = "Satış Kaydet"; submitBtn.style.backgroundColor = "var(--danger)"; label.innerText = "Satış Fiyatı (₺)"; } }
+    
+    window.setTradeType = function(type) {
+        document.getElementById('transType').value = type;
+        const btnBuy = document.getElementById('btnBuy');
+        const btnSell = document.getElementById('btnSell');
+        const submitBtn = document.getElementById('submitBtn');
+        const label = document.getElementById('priceLabel');
+
+        if(type === 'buy') {
+            btnBuy.classList.add('buy-active'); btnSell.classList.remove('sell-active');
+            submitBtn.innerText = "Alış Kaydet"; submitBtn.style.backgroundColor = "var(--success)"; label.innerText = "Alış Fiyatı (₺)";
+        } else {
+            btnBuy.classList.remove('buy-active'); btnSell.classList.add('sell-active');
+            submitBtn.innerText = "Satış Kaydet"; submitBtn.style.backgroundColor = "var(--danger)"; label.innerText = "Satış Fiyatı (₺)";
+        }
+    }
     window.togglePriceLabel = function() { } 
 
     window.addTransaction=function(){const t=document.getElementById('transType').value,d=document.getElementById('buyDate').value,s=document.getElementById('assetSymbol').value.trim(),q=parseFloat(document.getElementById('quantity').value),p=parseFloat(document.getElementById('price').value);if(!s||!q||!p)return; if(t==='sell'){const h=calculatedAssets[s]?.qty||0;if(q>h){showToast("Yetersiz bakiye");return;}} else if(!marketPrices[s])marketPrices[s]=p; portfolio.push({id:Date.now(),type:t,date:d,symbol:s,quantity:q,price:p}); saveDataToCloud(); showToast("Kaydedildi");}
@@ -684,4 +708,3 @@
 </script>
 </body>
 </html>
-
